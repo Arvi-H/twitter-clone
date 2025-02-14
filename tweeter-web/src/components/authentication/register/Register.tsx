@@ -8,6 +8,7 @@ import { Buffer } from "buffer";
 import useToastListener from "../../toaster/ToastListenerHook";
 import AuthenticationFields from "../AuthenticationFields";
 import useUserInfo from "../../userInfo/useUserInfo";
+import { AuthenticationPresenter, AuthenticationView } from "../../../presenters/AuthenticationPresenter";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
@@ -20,180 +21,96 @@ const Register = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const navigate = useNavigate();
+  const { displayErrorMessage, displayInfoMessage, clearLastInfoMessage } = useToastListener();
   const { updateUserInfo } = useUserInfo();
-  const { displayErrorMessage } = useToastListener();
+  const navigate = useNavigate();
 
-  const checkSubmitButtonStatus = (): boolean => {
-    return (
-      !firstName ||
-      !lastName ||
-      !alias ||
-      !password ||
-      !imageUrl ||
-      !imageFileExtension
-    );
+  const listener: AuthenticationView = {
+    displayErrorMessage,
+    displayInfoMessage,
+    clearLastInfoMessage,
+    updateUserInfo,
+    navigate,
+    setIsLoading
   };
 
-  const registerOnEnter = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key == "Enter" && !checkSubmitButtonStatus()) {
-      doRegister();
-    }
-  };
+  const [presenter] = useState(new AuthenticationPresenter(listener));
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    handleImageFile(file);
-  };
-
-  const handleImageFile = (file: File | undefined) => {
     if (file) {
-      setImageUrl(URL.createObjectURL(file));
-
-      const reader = new FileReader();
-      reader.onload = (event: ProgressEvent<FileReader>) => {
-        const imageStringBase64 = event.target?.result as string;
-
-        // Remove unnecessary file metadata from the start of the string.
-        const imageStringBase64BufferContents =
-          imageStringBase64.split("base64,")[1];
-
-        const bytes: Uint8Array = Buffer.from(
-          imageStringBase64BufferContents,
-          "base64"
-        );
-
-        setImageBytes(bytes);
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        if (fileReader.result instanceof ArrayBuffer) {
+          setImageBytes(new Uint8Array(fileReader.result));
+          setImageUrl(URL.createObjectURL(file));
+          setImageFileExtension(file.name.split('.').pop() || "");
+        }
       };
-      reader.readAsDataURL(file);
-
-      // Set image file extension (and move to a separate method)
-      const fileExtension = getFileExtension(file);
-      if (fileExtension) {
-        setImageFileExtension(fileExtension);
-      }
-    } else {
-      setImageUrl("");
-      setImageBytes(new Uint8Array());
+      fileReader.readAsArrayBuffer(file);
     }
   };
 
-  const getFileExtension = (file: File): string | undefined => {
-    return file.name.split(".").pop();
-  };
-
-  const doRegister = async () => {
-    try {
-      setIsLoading(true);
-
-      const [user, authToken] = await register(
-        firstName,
-        lastName,
-        alias,
-        password,
-        imageBytes,
-        imageFileExtension
-      );
-
-      updateUserInfo(user, user, authToken, rememberMe);
-      navigate("/");
-    } catch (error) {
-      displayErrorMessage(
-        `Failed to register user because of exception: ${error}`
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (
-    firstName: string,
-    lastName: string,
-    alias: string,
-    password: string,
-    userImageBytes: Uint8Array,
-    imageFileExtension: string
-  ): Promise<[User, AuthToken]> => {
-    // Not neded now, but will be needed when you make the request to the server in milestone 3
-    const imageStringBase64: string =
-      Buffer.from(userImageBytes).toString("base64");
-
-    // TODO: Replace with the result of calling the server
-    const user = FakeData.instance.firstUser;
-
-    if (user === null) {
-      throw new Error("Invalid registration");
-    }
-
-    return [user, FakeData.instance.authToken];
-  };
-
-  const inputFieldGenerator = () => {
-    return (
-      <>
-        <div className="form-floating">
-          <input
-            type="text"
-            className="form-control"
-            size={50}
-            id="firstNameInput"
-            placeholder="First Name"
-            onKeyDown={registerOnEnter}
-            onChange={(event) => setFirstName(event.target.value)}
-          />
-          <label htmlFor="firstNameInput">First Name</label>
-        </div>
-        <div className="form-floating">
-          <input
-            type="text"
-            className="form-control"
-            size={50}
-            id="lastNameInput"
-            placeholder="Last Name"
-            onKeyDown={registerOnEnter}
-            onChange={(event) => setLastName(event.target.value)}
-          />
-          <label htmlFor="lastNameInput">Last Name</label>
-        </div>
-        <AuthenticationFields
-          setAlias={setAlias}
-          setPassword={setPassword}
-          onKeyDown={registerOnEnter}
+  const inputFieldGenerator = () => (
+    <>
+      <div className="form-floating">
+        <input
+          type="text"
+          className="form-control"
+          id="firstNameInput"
+          placeholder="First Name"
+          onChange={(e) => setFirstName(e.target.value)}
         />
-        <div className="form-floating mb-3">
-          <input
-            type="file"
-            className="d-inline-block py-5 px-4 form-control bottom"
-            id="imageFileInput"
-            onKeyDown={registerOnEnter}
-            onChange={handleFileChange}
-          />
-          <label htmlFor="imageFileInput">User Image</label>
-          <img src={imageUrl} className="img-thumbnail" alt=""></img>
-        </div>
-      </>
-    );
-  };
-
-  const switchAuthenticationMethodGenerator = () => {
-    return (
-      <div className="mb-3">
-        Algready registered? <Link to="/login">Sign in</Link>
+        <label htmlFor="firstNameInput">First Name</label>
       </div>
-    );
-  };
+      <div className="form-floating">
+        <input
+          type="text"
+          className="form-control"
+          id="lastNameInput"
+          placeholder="Last Name"
+          onChange={(e) => setLastName(e.target.value)}
+        />
+        <label htmlFor="lastNameInput">Last Name</label>
+      </div>
+      <AuthenticationFields
+        setAlias={setAlias}
+        setPassword={setPassword}
+        onKeyDown={(e) => e.key === "Enter" && 
+          presenter.validateRegistration(firstName, lastName, alias, password, imageUrl, imageFileExtension) &&
+          presenter.register(firstName, lastName, alias, password, imageBytes, imageFileExtension, rememberMe)
+        }
+      />
+      <div className="form-floating mb-3">
+        <input
+          type="file"
+          className="d-inline-block py-5 px-4 form-control bottom"
+          id="imageFileInput"
+          onChange={handleFileChange}
+        />
+        <label htmlFor="imageFileInput">User Image</label>
+        <img src={imageUrl} className="img-thumbnail" alt=""></img>
+      </div>
+    </>
+  );
+
+  const switchAuthenticationMethodGenerator = () => (
+    <div className="mb-3">
+      Already registered? <Link to="/login">Sign in</Link>
+    </div>
+  );
 
   return (
     <AuthenticationFormLayout
       headingText="Please Register"
       submitButtonLabel="Register"
       oAuthHeading="Register with:"
+      isLoading={isLoading}
+      submitButtonDisabled={() => !presenter.validateRegistration(firstName, lastName, alias, password, imageUrl, imageFileExtension)}
+      submit={() => presenter.register(firstName, lastName, alias, password, imageBytes, imageFileExtension, rememberMe)}
       inputFieldGenerator={inputFieldGenerator}
       switchAuthenticationMethodGenerator={switchAuthenticationMethodGenerator}
       setRememberMe={setRememberMe}
-      submitButtonDisabled={checkSubmitButtonStatus}
-      isLoading={isLoading}
-      submit={doRegister}
     />
   );
 };

@@ -14,46 +14,33 @@ const UserItemScroller = (props: Props) => {
   const { displayErrorMessage } = useToastListener();
   const { displayedUser, authToken } = useUserInfo();
   const [items, setItems] = useState<User[]>([]);
-  const [newItems, setNewItems] = useState<User[]>([]);
   const [changedDisplayedUser, setChangedDisplayedUser] = useState(true);
 
-  // Initialize the component whenever the displayed user changes
-  useEffect(() => {
-    reset();
-  }, [displayedUser]);
-
-  // Load initial items whenever the displayed user changes. Done in a separate useEffect hook so the changes from reset will be visible.
-  useEffect(() => {
-    if(changedDisplayedUser) {
-      loadMoreItems();
-    }
-  }, [changedDisplayedUser]);
-
-  // Add new items whenever there are new items to add
-  useEffect(() => {
-    if(newItems) {
-      setItems([...items, ...newItems]);
-    }
-  }, [newItems])
-
-  const reset = async () => {
-    setItems([]);
-    setNewItems([]);
-    setChangedDisplayedUser(true);
-    presenter.reset();
-  }
-
   const listener: UserItemView = {
-    addItems: (newItems: User[]) => setNewItems(newItems),
-    displayErrorMessage: displayErrorMessage,
-  }
+    addItems: (newItems: User[]) => setItems(oldItems => [...oldItems, ...newItems]),
+    displayErrorMessage
+  };
 
   const [presenter] = useState(props.presenterGenerator(listener));
 
-  const loadMoreItems = async () => {
-    presenter.loadMoreItems(authToken!, displayedUser!.alias);
-    setChangedDisplayedUser(false);
-  }
+  useEffect(() => {
+    setItems([]);
+    setChangedDisplayedUser(true);
+    presenter.reset();
+  }, [displayedUser, presenter]);
+
+  useEffect(() => {
+    if (changedDisplayedUser && authToken && displayedUser) {
+      presenter.loadMoreItems(authToken, displayedUser.alias);
+      setChangedDisplayedUser(false);
+    }
+  }, [changedDisplayedUser, authToken, displayedUser, presenter]);
+
+  const loadMoreItems = () => {
+    if (authToken && displayedUser) {
+      presenter.loadMoreItems(authToken, displayedUser.alias);
+    }
+  };
 
   return (
     <div className="container px-0 overflow-visible vh-100">
