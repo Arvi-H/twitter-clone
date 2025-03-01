@@ -21,7 +21,7 @@ const UserItemScroller = (props: Props) => {
     displayErrorMessage
   };
 
-  const [presenter] = useState(props.presenterGenerator(listener));
+  const [presenter] = useState(props.presenterGenerator(listener)); 
 
   useEffect(() => {
     setItems([]);
