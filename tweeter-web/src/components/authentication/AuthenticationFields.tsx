@@ -12,7 +12,7 @@ const AuthenticationFields = (props: Props) => {
           type="text"
           className="form-control"
           size={50}
-          id="aliasInput"
+          id="aliasInput" 
           placeholder="name@example.com"
           onKeyDown={props.onKeyDown}
           onChange={(event) => props.setAlias(event.target.value)}
