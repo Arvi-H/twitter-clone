@@ -37,10 +37,7 @@ const OAuth = () => {
             )
           }
         >
-          <OverlayTrigger
-            placement="top"
-            overlay={<Tooltip id={`${button.id}Tooltip`}>{button.label}</Tooltip>}
-          >
+          <OverlayTrigger placement="top" overlay={<Tooltip id={`${button.id}Tooltip`}>{button.label}</Tooltip>}>
             <FontAwesomeIcon icon={["fab", button.icon]} />
           </OverlayTrigger>
         </button>
