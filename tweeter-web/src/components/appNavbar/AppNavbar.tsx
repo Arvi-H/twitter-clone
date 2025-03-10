@@ -22,13 +22,7 @@ const AppNavbar = () => {
   const [presenter] = useState(new AppNavbarPresenter(listener));
 
   return (
-    <Navbar
-      collapseOnSelect
-      className="mb-4"
-      expand="md"
-      bg="primary"
-      variant="dark"
-    >
+    <Navbar collapseOnSelect expand="md" bg="primary" variant="dark">
       <Container>
         <Navbar.Brand>
           <div className="d-flex flex-row">
