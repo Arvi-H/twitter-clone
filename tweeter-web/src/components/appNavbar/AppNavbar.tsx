@@ -36,7 +36,7 @@ const AppNavbar = () => {
                 <b>Tweeter</b>
               </NavLink>
             </div>
-          </div>
+          </div> 
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         
