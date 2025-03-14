@@ -32,7 +32,7 @@ const AppNavbar = () => {
               </NavLink>
             </div>
             <div id="brand-title" className="p-3">
-              <NavLink className="brand-link" to="/">
+              <NavLink className="brand-link" to="/"> 
                 <b>Tweeter</b>
               </NavLink>
             </div>
